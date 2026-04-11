@@ -5495,7 +5495,34 @@ static int pp_close_ctx(struct pingpong_context *ctx)
 
 `ibv_destroy_qp`, `ibv_destroy_cq`, `ibv_dereg_mr`, `ibv_free_dm`, `ibv_dealloc_pd`, `ibv_destroy_comp_channel`, `ibv_close_device` 等接口实现与打开接口类似，都是调用设备的`ops`接口。用户空间通知内核空间实现，就不一一介绍。
 
-## 4 总结
+## 4 Wireshark分析
+
+由于我们在本地电脑上进行的RDMA通信，使用bpftrace捕获通信的skb，然后使用Wireshark分析。如下：
+
+bpftrace捕获通信的skb：
+
+```bash
+$ cat rxe_xmit.bt 
+fentry:rxe_xmit_packet {
+  $ret = skboutput("rxe_xmit_packet.pcap", args.skb, args.skb.len, 0);
+}
+
+$ sudo ./src/bpftrace rxe_xmit.bt  -v
+Trying to attach probe: fentry:rdma_rxe:rxe_xmit_packet
+Attached 1 probe
+```
+
+通过Wireshark分析捕获的skb，我们可以看到RDMA通信的详细信息。如下：
+
+发送包：
+
+![发送包](./images/ibv_rxe_xmit_data.png)
+
+应答包：
+
+![应答包](./images/ibv_rxe_xmit_ack.png)
+
+## 5 总结
 
 通过本文，我们以`rc_pingpong`示例分析了使用ibverbs进行RDMA通信的基本原理和实现。我们详细介绍了ibverbs的接口的实现机制，通过本文的分析，我们可以更好地理解ibverbs的工作原理和实现机制。
 
