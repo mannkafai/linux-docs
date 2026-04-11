@@ -7606,7 +7606,57 @@ int iw_cm_disconnect(struct iw_cm_id *cm_id, int abrupt)
 }
 ```
 
-## 4 总结
+## 4 Wireshark分析
+
+我们通过bpftrace捕获通信的skb，然后使用Wireshark分析。如下：
+
+bpftrace捕获通信的skb：
+
+```bash
+$ cat rxe_xmit.bt 
+fentry:rxe_xmit_packet {
+  $ret = skboutput("rxe_xmit_packet.pcap", args.skb, args.skb.len, 0);
+}
+
+$ sudo ./src/bpftrace rxe_xmit.bt  -v
+Trying to attach probe: fentry:rdma_rxe:rxe_xmit_packet
+Attached 1 probe
+```
+
+通过Wireshark分析捕获的skb，我们可以看到RDMA通信的详细信息。如下：
+
+
+连接请求：
+
+![连接请求](./images/cm_rxe_connect_request.png)
+
+连接回复：
+
+![连接回复](./images/cm_rxe_connect_reply.png)
+
+建立连接：
+
+![建立连接](./images/cm_rxe_reday_to_use.png)
+
+发送数据：
+
+![发送数据](./images/cm_rxe_send_data.png)
+
+发送数据应答：
+
+![发送数据应答](./images/cm_rxe_ack_data.png)
+
+
+断开连接请求：
+
+![断开连接请求](./images/cm_rxe_disconnect_request.png)
+
+断开连接应答：
+
+![断开连接应答](./images/cm_rxe_disconnect_reply.png)
+
+
+## 5 总结
 
 通过本文，我们以`rdma_server`和`rdma_client`示例分析了使用CM进行RDMA通信的基本原理和实现。我们详细分析了`cm`接口的实现机制，包括`cm`事件处理过程和`cm`连接事件处理过程。通过本文的分析，我们可以更好地理解`librdmacm`的工作原理。
 
